@@ -17,7 +17,7 @@ public class UserController {
     private UserService service = new UserServiceImpl();
     private Scanner sc = new Scanner(System.in);
 
-    // ================= REGISTER =================
+    // ================= USER REGISTRATION =================
     public void register() throws Exception {
 
         User user = new User();
@@ -31,6 +31,14 @@ public class UserController {
         System.out.print("Enter password: ");
         user.setPassword(sc.next());
 
+        sc.nextLine(); // clear buffer
+
+        System.out.print("Enter security question (for password recovery): ");
+        user.setSecurityQuestion(sc.nextLine());
+
+        System.out.print("Enter security answer: ");
+        user.setSecurityAnswer(sc.nextLine());
+
         // default role
         user.setRole("USER");
 
@@ -38,6 +46,37 @@ public class UserController {
 
         logger.info("New user registered: " + user.getEmail());
         System.out.println("User Registered Successfully!");
+    }
+
+    // ================= ARTIST REGISTRATION =================
+    public void registerArtist() throws Exception {
+
+        User user = new User();
+
+        System.out.print("Enter username: ");
+        user.setUsername(sc.next());
+
+        System.out.print("Enter email: ");
+        user.setEmail(sc.next());
+
+        System.out.print("Enter password: ");
+        user.setPassword(sc.next());
+
+        sc.nextLine(); // clear buffer
+
+        System.out.print("Enter security question (for password recovery): ");
+        user.setSecurityQuestion(sc.nextLine());
+
+        System.out.print("Enter security answer: ");
+        user.setSecurityAnswer(sc.nextLine());
+
+        // artist role
+        user.setRole("ARTIST");
+
+        service.register(user);
+
+        logger.info("New artist registered: " + user.getEmail());
+        System.out.println("Artist Registered Successfully! Please login to create your artist profile.");
     }
 
     // ================= LOGIN =================
@@ -70,7 +109,40 @@ public class UserController {
         }
     }
 
-    // ================= LOGOUT (OPTIONAL BUT GOOD) =================
+    // ================= FORGOT PASSWORD =================
+    public void forgotPassword() throws Exception {
+
+        System.out.print("Enter your email: ");
+        String email = sc.next();
+        sc.nextLine(); // clear buffer
+
+        // Get security question
+        String securityQuestion = service.getSecurityQuestion(email);
+
+        if (securityQuestion == null) {
+            System.out.println("Email not found!");
+            return;
+        }
+
+        System.out.println("Security Question: " + securityQuestion);
+        System.out.print("Enter your answer: ");
+        String answer = sc.nextLine();
+
+        System.out.print("Enter new password: ");
+        String newPassword = sc.next();
+
+        boolean success = service.resetPassword(email, answer, newPassword);
+
+        if (success) {
+            System.out.println("Password reset successful!");
+            logger.info("Password reset for email: " + email);
+        } else {
+            System.out.println("Security answer incorrect. Password reset failed.");
+            logger.warn("Failed password reset attempt for email: " + email);
+        }
+    }
+
+    // ================= LOGOUT =================
     public void logout() {
 
         LoggedInUser.currentUserId = 0;
@@ -78,7 +150,8 @@ public class UserController {
 
         System.out.println("Logged out successfully!");
     }
- // ========= CHANGE PASSWORD =========
+
+    // ================= CHANGE PASSWORD =================
     public void changePassword() throws Exception {
 
         int userId = LoggedInUser.currentUserId;

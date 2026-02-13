@@ -46,6 +46,17 @@ public class SongServiceImpl implements SongService {
         return songDAO.searchSongs(keyword);
     }
 
+    // ===== BROWSE BY GENRE =====
+    @Override
+    public List<Song> getSongsByGenre(String genre) throws Exception {
+        return songDAO.getSongsByGenre(genre);
+    }
+
+    @Override
+    public List<String> getAllGenres() throws Exception {
+        return songDAO.getAllGenres();
+    }
+
     // ===== PLAY SONG =====
     @Override
     public void playSong(int songId) throws Exception {

@@ -3,18 +3,14 @@ package com.revplay.controller;
 import java.util.List;
 import java.util.Scanner;
 
-import com.revplay.model.Song;
-import com.revplay.model.ListeningHistory;
 import com.revplay.model.Album;
-
-import com.revplay.service.SongService;
-import com.revplay.service.ListeningHistoryService;
+import com.revplay.model.Song;
 import com.revplay.service.AlbumService;
-
-import com.revplay.service.impl.SongServiceImpl;
-import com.revplay.service.impl.ListeningHistoryServiceImpl;
+import com.revplay.service.ListeningHistoryService;
+import com.revplay.service.SongService;
 import com.revplay.service.impl.AlbumServiceImpl;
-
+import com.revplay.service.impl.ListeningHistoryServiceImpl;
+import com.revplay.service.impl.SongServiceImpl;
 import com.revplay.util.LoggedInUser;
 
 public class SongController {
@@ -24,10 +20,11 @@ public class SongController {
             new ListeningHistoryServiceImpl();
 
     private Scanner sc = new Scanner(System.in);
+
+    // ===== MUSIC PLAYER STATE =====
     private boolean isPlaying = false;
     private boolean repeatOn = false;
     private int currentSongId = -1;
-
 
     // ========= ADD SONG (ARTIST ONLY, WITH ALBUM SUPPORT) =========
     public void addSong() throws Exception {
@@ -54,7 +51,7 @@ public class SongController {
         song.setDuration(sc.nextInt());
 
         // ===== ALBUM CHOICE =====
-        sc.nextLine(); // clear buffer
+        sc.nextLine();
         System.out.print("Add this song to an album? (yes/no): ");
         String choice = sc.nextLine().trim().toLowerCase();
 
@@ -65,6 +62,7 @@ public class SongController {
 
             if (albums.isEmpty()) {
                 System.out.println("You have no albums. Song will be uploaded without album.");
+                song.setAlbumId(null);
             } else {
                 System.out.println("\n===== YOUR ALBUMS =====");
                 for (Album a : albums) {
@@ -79,6 +77,8 @@ public class SongController {
                 int albumId = sc.nextInt();
                 song.setAlbumId(albumId);
             }
+        } else {
+            song.setAlbumId(null);
         }
 
         songService.addSong(song);
@@ -109,12 +109,10 @@ public class SongController {
         int id = sc.nextInt();
 
         songService.deleteSong(id, LoggedInUser.currentUserId);
-
-
         System.out.println("Song deleted successfully!");
     }
 
-    // ========= PLAY SONG =========
+    // ========= PLAY SONG (WITH PROGRESS BAR) =========
     public void playSong() throws Exception {
 
         int userId = LoggedInUser.currentUserId;
@@ -134,8 +132,40 @@ public class SongController {
         isPlaying = true;
 
         System.out.println("▶ Playing song ID: " + songId);
+
+        // ===== SIMULATED PROGRESS BAR =====
+        int totalBlocks = 20;
+
+        for (int i = 0; i <= totalBlocks; i++) {
+
+            if (!isPlaying) {
+                System.out.println("\n⏸ Playback paused.");
+                break;
+            }
+
+            String bar =
+                    "█".repeat(i) +
+                    "░".repeat(totalBlocks - i);
+
+            int percent = (i * 100) / totalBlocks;
+
+            System.out.print("\r[" + bar + "] " + percent + "%");
+
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        if (isPlaying) {
+            System.out.println("\n✔ Song playback finished.");
+            isPlaying = false;
+            currentSongId = -1;
+        }
     }
- // ========= PAUSE SONG =========
+
+    // ========= PAUSE SONG =========
     public void pauseSong() {
 
         if (!isPlaying) {
@@ -146,7 +176,8 @@ public class SongController {
         isPlaying = false;
         System.out.println("⏸ Song paused.");
     }
- // ========= SKIP SONG =========
+
+    // ========= SKIP SONG =========
     public void skipSong() {
 
         if (currentSongId == -1) {
@@ -162,7 +193,8 @@ public class SongController {
             System.out.println("⏭ Song skipped.");
         }
     }
- // ========= TOGGLE REPEAT =========
+
+    // ========= TOGGLE REPEAT =========
     public void toggleRepeat() {
 
         repeatOn = !repeatOn;
@@ -174,11 +206,10 @@ public class SongController {
         }
     }
 
-
     // ========= SEARCH SONGS =========
     public void searchSongs() throws Exception {
 
-        sc.nextLine(); // clear buffer
+        sc.nextLine();
         System.out.print("Enter keyword: ");
         String keyword = sc.nextLine();
 
@@ -192,6 +223,48 @@ public class SongController {
                 s.getGenre() + " | " +
                 s.getDuration() + " sec"
             );
+        }
+    }
+
+    // ========= BROWSE BY GENRE =========
+    public void browseByGenre() throws Exception {
+
+        sc.nextLine();
+        System.out.print("Enter genre to browse: ");
+        String genre = sc.nextLine();
+
+        List<Song> songs = songService.getSongsByGenre(genre);
+
+        System.out.println("\n===== SONGS IN GENRE: " + genre + " =====");
+
+        if (songs.isEmpty()) {
+            System.out.println("No songs found in this genre.");
+            return;
+        }
+
+        for (Song s : songs) {
+            System.out.println(
+                s.getId() + " | " +
+                s.getTitle() + " | " +
+                s.getDuration() + " sec | Plays: " + s.getPlayCount()
+            );
+        }
+    }
+
+    // ========= VIEW ALL GENRES =========
+    public void viewAllGenres() throws Exception {
+
+        List<String> genres = songService.getAllGenres();
+
+        System.out.println("\n===== AVAILABLE GENRES =====");
+
+        if (genres.isEmpty()) {
+            System.out.println("No genres found.");
+            return;
+        }
+
+        for (String genre : genres) {
+            System.out.println("- " + genre);
         }
     }
 
@@ -222,7 +295,8 @@ public class SongController {
             );
         }
     }
- // ========= UPDATE SONG (ARTIST ONLY) =========
+
+    // ========= UPDATE SONG (ARTIST ONLY) =========
     public void updateSong() throws Exception {
 
         int artistId = LoggedInUser.currentUserId;
@@ -234,7 +308,7 @@ public class SongController {
 
         System.out.print("Enter Song ID to update: ");
         int songId = sc.nextInt();
-        sc.nextLine(); // clear buffer
+        sc.nextLine();
 
         Song existing = songService.getSongById(songId);
 
@@ -261,9 +335,8 @@ public class SongController {
         System.out.print("Enter new duration (seconds): ");
         song.setDuration(sc.nextInt());
 
-        // ===== ALBUM UPDATE =====
-        System.out.print("Change album? (yes/no): ");
         sc.nextLine();
+        System.out.print("Change album? (yes/no): ");
         String choice = sc.nextLine().trim().toLowerCase();
 
         if (choice.equals("yes")) {
@@ -272,15 +345,11 @@ public class SongController {
             List<Album> albums = albumService.getAlbumsByArtist(artistId);
 
             if (albums.isEmpty()) {
-                System.out.println("No albums found. Album will be cleared.");
-                song.setAlbumId(0);
+                song.setAlbumId(null);
             } else {
                 System.out.println("\n===== YOUR ALBUMS =====");
                 for (Album a : albums) {
-                    System.out.println(
-                        "ID: " + a.getId() +
-                        " | Title: " + a.getTitle()
-                    );
+                    System.out.println("ID: " + a.getId() + " | Title: " + a.getTitle());
                 }
 
                 System.out.print("Enter album ID: ");
@@ -295,4 +364,48 @@ public class SongController {
         System.out.println("Song updated successfully!");
     }
 
+    // ========= VIEW MY SONGS STATISTICS =========
+    public void viewMySongStatistics() throws Exception {
+
+        int artistId = LoggedInUser.currentUserId;
+
+        if (artistId <= 0) {
+            System.out.println("Please login as an artist first.");
+            return;
+        }
+
+        List<Song> songs = songService.getSongsByArtist(artistId);
+
+        if (songs.isEmpty()) {
+            System.out.println("You have not uploaded any songs yet.");
+            return;
+        }
+
+        System.out.println("\n===== MY SONGS STATISTICS =====");
+
+        int totalPlays = 0;
+        int totalSongs = songs.size();
+        Song mostPlayed = null;
+
+        for (Song s : songs) {
+            System.out.println(
+                "ID: " + s.getId() +
+                " | Title: " + s.getTitle() +
+                " | Genre: " + s.getGenre() +
+                " | Play Count: " + s.getPlayCount()
+            );
+            totalPlays += s.getPlayCount();
+            if (mostPlayed == null || s.getPlayCount() > mostPlayed.getPlayCount()) {
+                mostPlayed = s;
+            }
+        }
+
+        System.out.println("\n----- SUMMARY -----");
+        System.out.println("Total Songs: " + totalSongs);
+        System.out.println("Total Plays: " + totalPlays);
+        System.out.println("Average Plays per Song: " + (totalSongs > 0 ? (totalPlays / totalSongs) : 0));
+        if (mostPlayed != null && mostPlayed.getPlayCount() > 0) {
+            System.out.println("Most Played: " + mostPlayed.getTitle() + " (" + mostPlayed.getPlayCount() + " plays)");
+        }
+    }
 }

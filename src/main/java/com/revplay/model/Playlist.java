@@ -6,15 +6,17 @@ public class Playlist {
     private int userId;
     private String name;
     private String description;
+    private boolean isPublic;
 
     // ===== Constructors =====
     public Playlist() {}
 
-    public Playlist(int id, int userId, String name, String description) {
+    public Playlist(int id, int userId, String name, String description, boolean isPublic) {
         this.id = id;
         this.userId = userId;
         this.name = name;
         this.description = description;
+        this.isPublic = isPublic;
     }
 
     // ===== Getters =====
@@ -34,6 +36,10 @@ public class Playlist {
         return description;
     }
 
+    public boolean isPublic() {
+        return isPublic;
+    }
+
     // ===== Setters =====
     public void setId(int id) {
         this.id = id;
@@ -51,9 +57,13 @@ public class Playlist {
         this.description = description;
     }
 
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
     // ===== toString (for printing) =====
     @Override
     public String toString() {
-        return id + " | " + name + " | " + description;
+        return id + " | " + name + " | " + description + " | " + (isPublic ? "Public" : "Private");
     }
 }

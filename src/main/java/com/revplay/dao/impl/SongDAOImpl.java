@@ -51,11 +51,12 @@ public class SongDAOImpl implements SongDAO {
             ps.setInt(4, song.getArtistId());
 
             // ✅ CRITICAL FIX: album_id handling
-            if (song.getAlbumId() > 0) {
+            if (song.getAlbumId() != null) {
                 ps.setInt(5, song.getAlbumId());
             } else {
                 ps.setNull(5, java.sql.Types.INTEGER);
             }
+
 
             ps.executeUpdate();
         }
@@ -200,7 +201,10 @@ public class SongDAOImpl implements SongDAO {
                 throw new Exception("Song not found or you are not the owner.");
             }
         }
-    }@Override
+    }
+
+    // ================= GET SONG BY ID =================
+    @Override
     public Song getSongById(int songId) throws Exception {
 
         Song song = null;
@@ -228,6 +232,59 @@ public class SongDAOImpl implements SongDAO {
         }
 
         return song;
+    }
+
+    // ================= GET SONGS BY GENRE =================
+    @Override
+    public List<Song> getSongsByGenre(String genre) throws Exception {
+
+        List<Song> list = new ArrayList<>();
+        String like = "%" + genre.toLowerCase() + "%";
+
+        String sql =
+            "SELECT id, title, genre, duration, play_count, artist_id, album_id " +
+            "FROM songs WHERE LOWER(genre) LIKE ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, like);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Song s = new Song();
+                s.setId(rs.getInt("id"));
+                s.setTitle(rs.getString("title"));
+                s.setGenre(rs.getString("genre"));
+                s.setDuration(rs.getInt("duration"));
+                s.setPlayCount(rs.getInt("play_count"));
+                s.setArtistId(rs.getInt("artist_id"));
+                s.setAlbumId(rs.getInt("album_id"));
+                list.add(s);
+            }
+        }
+
+        return list;
+    }
+
+    // ================= GET ALL GENRES =================
+    @Override
+    public List<String> getAllGenres() throws Exception {
+
+        List<String> list = new ArrayList<>();
+
+        String sql = "SELECT DISTINCT genre FROM songs WHERE genre IS NOT NULL";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(rs.getString("genre"));
+            }
+        }
+
+        return list;
     }
 
 }

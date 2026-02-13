@@ -31,4 +31,21 @@ public class UserServiceImpl implements UserService {
 
         userDAO.changePassword(userId, oldPassword, newPassword);
     }
+
+    // ================= GET SECURITY QUESTION =================
+    @Override
+    public String getSecurityQuestion(String email) throws Exception {
+        return userDAO.getSecurityQuestion(email);
+    }
+
+    // ================= RESET PASSWORD =================
+    @Override
+    public boolean resetPassword(String email, String securityAnswer, String newPassword) throws Exception {
+
+        if (newPassword == null || newPassword.length() < 4) {
+            throw new Exception("New password must be at least 4 characters.");
+        }
+
+        return userDAO.resetPassword(email, securityAnswer, newPassword);
+    }
 }

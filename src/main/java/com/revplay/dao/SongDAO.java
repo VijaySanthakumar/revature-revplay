@@ -17,6 +17,11 @@ public interface SongDAO {
 
     List<Song> searchSongs(String keyword) throws Exception;
 
+    // BROWSE
+    List<Song> getSongsByGenre(String genre) throws Exception;
+
+    List<String> getAllGenres() throws Exception;
+
     // ===== UPDATE =====
     void updateSong(Song song) throws Exception;
 

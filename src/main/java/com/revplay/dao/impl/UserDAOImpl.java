@@ -16,13 +16,15 @@ public class UserDAOImpl implements UserDAO {
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
-                     "INSERT INTO users (id, username, email, password, role) " +
-                     "VALUES (users_seq.NEXTVAL, ?, ?, ?, ?)")) {
+                     "INSERT INTO users (id, username, email, password, role, security_question, security_answer) " +
+                     "VALUES (users_seq.NEXTVAL, ?, ?, ?, ?, ?, ?)")) {
 
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getPassword());
             ps.setString(4, user.getRole());
+            ps.setString(5, user.getSecurityQuestion());
+            ps.setString(6, user.getSecurityAnswer());
 
             ps.executeUpdate();
         }
@@ -76,6 +78,45 @@ public class UserDAOImpl implements UserDAO {
             if (rows == 0) {
                 throw new Exception("Old password is incorrect.");
             }
+        }
+    }
+
+    // ================= GET SECURITY QUESTION =================
+    @Override
+    public String getSecurityQuestion(String email) throws Exception {
+
+        String sql = "SELECT security_question FROM users WHERE email = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("security_question");
+                }
+            }
+        }
+        return null;
+    }
+
+    // ================= RESET PASSWORD =================
+    @Override
+    public boolean resetPassword(String email, String securityAnswer, String newPassword) throws Exception {
+
+        String sql =
+            "UPDATE users SET password = ? WHERE email = ? AND security_answer = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, newPassword);
+            ps.setString(2, email);
+            ps.setString(3, securityAnswer);
+
+            int rows = ps.executeUpdate();
+            return rows > 0;
         }
     }
 }

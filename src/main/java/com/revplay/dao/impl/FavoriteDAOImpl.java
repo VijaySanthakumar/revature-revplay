@@ -2,14 +2,20 @@ package com.revplay.dao.impl;
 
 import com.revplay.dao.FavoriteDAO;
 import com.revplay.model.Favorite;
+import com.revplay.model.Song;
 import com.revplay.util.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import com.revplay.model.Song;
+import java.util.Map;
 
-
+/**
+ * Implementation of the FavoriteDAO interface.
+ * 
+ * @author Vijay
+ */
 public class FavoriteDAOImpl implements FavoriteDAO {
 
     // ===== ADD FAVORITE =====
@@ -110,6 +116,36 @@ public class FavoriteDAOImpl implements FavoriteDAO {
         }
 
         return list;
+    }
+
+    @Override
+    public Map<String, List<String>> getUsersWhoFavoritedArtistSongs(int artistId) throws Exception {
+
+        Map<String, List<String>> result = new HashMap<>();
+
+        Connection con = DBConnection.getConnection();
+
+        String sql =
+            "SELECT s.title as song_title, u.username, u.email " +
+            "FROM favorites f " +
+            "JOIN songs s ON f.song_id = s.id " +
+            "JOIN users u ON f.user_id = u.id " +
+            "WHERE s.artist_id = ? " +
+            "ORDER BY s.title, u.username";
+
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setInt(1, artistId);
+
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            String songTitle = rs.getString("song_title");
+            String userInfo = rs.getString("username") + " (" + rs.getString("email") + ")";
+
+            result.computeIfAbsent(songTitle, k -> new ArrayList<>()).add(userInfo);
+        }
+
+        return result;
     }
 
 }
